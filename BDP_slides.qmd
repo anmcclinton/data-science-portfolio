@@ -1,0 +1,907 @@
+---
+title: "The Impact of Aging, Dementia, and SES on Cognitive Decline"
+subtitle: "A Longitudinal Study Using Linear Mixed Models"
+author: "Adasia M., Bess T., Preethi R."
+execute:
+  echo: true
+  warning: false
+  message: false
+  error: false
+format: 
+  revealjs:
+    theme: beige
+    transition: fade
+    embed-resources: true
+    slide-number: false
+    width: 1600
+    height: 900
+    df-print: paged
+    html-math-method: katex
+editor: source
+pdf-separate-fragments: true
+fig-align: center
+---
+
+## Introduction
+
+Linear Mixed Models (LMMs) are powerful statistical tools designed to analyze data with complex structures, such as hierarchical data (e.g., individuals within groups) or repeated measures (e.g., assessments taken over time). Unlike traditional methods, LMMs account for variations at both the group level and the individual level, making them ideal for studying patterns of cognitive decline across aging populations.
+
+### Why LMMs?
+
+-   **Fixed Effects**: Capture overall population trends, like how age or socioeconomic status influences cognitive function on average.
+-   **Random Effects**: Model differences between individuals, accounting for unique trajectories over time or variability across participants.
+-   **Data Flexibility**: Handle missing data and unbalanced datasets effectively, ensuring reliable results even when some observations are incomplete.
+
+## Literature Review
+
+### Linear Mixed Models: An Overview
+
+-   Extend simple linear regression by incorporating **fixed effects** (population-level) and **random effects** (subject-level variability).
+-   Ideal for analyzing longitudinal and hierarchical datasets.
+-   Provide unbiased estimates even with missing data (Bates, 2014; Gelman & Hill, 2007).
+
+### Covariance Structure
+
+-   Essential for modeling dependencies between repeated measures (Starkweather, 2010).
+-   Positive covariance: variables move together.
+-   Negative covariance: variables move in opposite directions.
+-   Allows explicit modeling of within-subject variability, critical for longitudinal studies.
+
+------------------------------------------------------------------------
+
+## Literature Review Continued
+
+### Robust Estimation
+
+-   Methods that minimize the influence of outliers, ensuring parameter reliability (Agostinelli & Yohai, 2016).
+-   Non-robust techniques like OLS regression are highly sensitive to extreme values and may yield biased results.
+
+### Challenges of Traditional Methods
+
+-   Traditional linear models assume **independence of observations**, often violated in clustered data (Barr et al., 2013).
+
+-   Handling missing data through listwise deletion or imputation can introduce bias (Enders, 2010).
+
+------------------------------------------------------------------------
+
+## Methods
+
+### Our Focus
+
+This project applies LMMs to investigate:
+
+-   The influence of **age**, **dementia status**, and **socioeconomic factors** on cognitive decline.
+
+-   Cognitive function measured using the **Mini-Mental State Examination (MMSE)**, a widely-used tool for assessing cognitive impairment.
+
+-   How repeated assessments over time help us understand individual changes in cognitive function while capturing broader population trends.
+
+## Methods
+
+### Dataset: OASIS-Longitudinal MRI Data in Nondemented and Demented Older Adults
+
+-   Source: [NCBI](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2895005/)
+
+**Summary of the chosen dataset:**
+
+-   Includes MRI scans of 150 subjects aged 60-96.
+-   Longitudinal data collected over 373 sessions.
+-   Subjects scanned at least twice, with visits separated by at least a year.
+-   Clinical Dementia Rating (CDR) categorized as nondemented or with mild Alzheimer’s disease.
+-   72 were nondemented throughout, while 64 were demented initially and remained so.
+-   Participants were right-handed, consisting of 62 men and 88 women.
+-   Each session had 3-4 T1-weighted MRI scans.
+
+## Methods
+
+### Modeling Approach
+
+-   **Outcome Variable**: Mini-Mental State Exam (MMSE) score.
+
+-   **Fixed Effects**: Age, dementia status, SES, and interactions.
+
+-   **Random Effects**: Subject ID to capture individual variability.
+
+-   **Software**: R (packages: `lme4`, `tableone` for data summaries).
+
+------------------------------------------------------------------------
+
+## R script for Table One {.smaller}
+
+```{r}
+#install.packages("tableone")
+library(tableone)
+
+#install.packages("readr")
+library(readr)
+
+oasis_longitudinal <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+# Load necessary library
+library(tableone)
+
+# Recode M/F for easier handling in Table 1 (optional)
+oasis_longitudinal$Gender <- ifelse(oasis_longitudinal$'M/F' == "M", "Male", "Female")
+
+# Define the variables to be included in Table 1
+vars <- c("Age", "Gender", "Hand", "EDUC", "SES", "MMSE", "CDR", "eTIV", "nWBV", "ASF")
+
+# Define the stratifying variable (Group)
+strata <- "Group"
+
+# Create Table One
+table1 <- CreateTableOne(vars = vars, strata = strata, data = oasis_longitudinal, factorVars = c("Gender", "Hand", "CDR"))
+
+# Print the table with p-values
+print(table1, showAllLevels = TRUE, smd = TRUE)
+
+```
+
+## Table One {.bigger}
+
+```{=html}
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-w7ak{border-color:#ffffff;font-family:Georgia, serif !important;text-align:left;vertical-align:top}
+</style>
+<table class="tg"><thead>
+  <tr>
+    <th class="tg-w7ak"></th>
+    <th class="tg-w7ak">level</th>
+    <th class="tg-w7ak">Converted</th>
+    <th class="tg-w7ak">Demented</th>
+    <th class="tg-w7ak">Nondemented</th>
+    <th class="tg-w7ak">p</th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td class="tg-w7ak">n</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">37</td>
+    <td class="tg-w7ak">146</td>
+    <td class="tg-w7ak">190</td>
+    <td class="tg-w7ak"></td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">Female</td>
+    <td class="tg-w7ak">F</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24 ( 64.9) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;60 ( 41.1) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;129 ( 67.9) </td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">Male</td>
+    <td class="tg-w7ak">M</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;13 ( 35.1) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;86 ( 58.9) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;61 ( 32.1) </td>
+    <td class="tg-w7ak"></td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">Dom Hand</td>
+    <td class="tg-w7ak">R</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;37 (100.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;146 (100.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;190 (100.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;NA</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">CDR</td>
+    <td class="tg-w7ak">0</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;18 ( 48.6) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 (&nbsp;&nbsp;0.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;188 ( 98.9) </td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">0.5</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;19 ( 51.4) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;102 ( 69.9) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 (&nbsp;&nbsp;1.1) </td>
+    <td class="tg-w7ak"></td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">1</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 (&nbsp;&nbsp;0.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;41 ( 28.1) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 (&nbsp;&nbsp;0.0) </td>
+    <td class="tg-w7ak"></td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">2</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 (&nbsp;&nbsp;0.0) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 (&nbsp;&nbsp;2.1) </td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 (&nbsp;&nbsp;0.0) </td>
+    <td class="tg-w7ak"></td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">Age</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;79.76 (7.43)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;76.26 (6.94)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;77.06 (8.10)</td>
+    <td class="tg-w7ak">0.045</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">Education</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;15.46 (2.52)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;13.67 (2.90)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;15.14 (2.74)</td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">SES</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;1.73 (0.96)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;2.77 (1.20)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;2.39 (1.05)</td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">MMSE</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;28.68 (1.56)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;24.51 (4.50)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;29.23 (0.88)</td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">eTIV</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">1459.27 (135.43)</td>
+    <td class="tg-w7ak">1485.85 (173.77)</td>
+    <td class="tg-w7ak">1495.50 (184.89)</td>
+    <td class="tg-w7ak">0.51</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">nWBV</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;0.72 (0.04)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;0.72 (0.03)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;0.74 (0.04)</td>
+    <td class="tg-w7ak">&lt;0.001</td>
+  </tr>
+  <tr>
+    <td class="tg-w7ak">ASF</td>
+    <td class="tg-w7ak"></td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;1.21 (0.11)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;1.20 (0.14)</td>
+    <td class="tg-w7ak">&nbsp;&nbsp;&nbsp;1.19 (0.14)</td>
+    <td class="tg-w7ak">0.683</td>
+  </tr>
+</tbody></table>
+```
+
+## Data Visualizations {.bigger}
+
+### Age of Participants
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# Load required libraries
+library(readr)
+
+# Load the dataset (ensure the correct file path is provided)
+oasis_longitudinal <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+# Visualization: Age of Participants
+counts <- table(oasis_longitudinal$Age)
+barplot(counts, 
+        main = "Age of Participants", 
+        xlab = "Age", 
+        col = "lightblue", 
+        border = "white")
+```
+
+## Data Visualizations {.tabset}
+
+### Gender of Participants
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# Load required libraries
+library(readr)
+
+# Load the dataset (ensure the correct file path is provided)
+oasis_longitudinal <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+# Visualization: Gender of Participants
+counts <- table(oasis_longitudinal$'M/F')
+barplot(counts, 
+        main = "Gender of Participants", 
+        xlab = "Gender", 
+        col = "lightgreen", 
+        border = "white")
+
+```
+
+## Data Visualizations {.tabset}
+
+### Socioeconomic Status of Participants
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# Load required libraries
+library(readr)
+
+# Load the dataset (ensure the correct file path is provided)
+oasis_longitudinal <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+# Visualization: Socioeconomic Status
+counts <- table(oasis_longitudinal$SES)
+barplot(counts, 
+        main = "Socioeconomic Status of Participants", 
+        xlab = "SES", 
+        col = "lightcoral", 
+        border = "white")
+
+```
+
+## Data Visualizations {.tabset}
+
+### Normalized Whole Brain Volume vs Age
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# Load required libraries
+library(readr)
+
+# Load the dataset (ensure the correct file path is provided)
+oasis_longitudinal <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+# Visualization: nWBV vs Age
+x <- oasis_longitudinal$nWBV
+y <- oasis_longitudinal$Age
+plot(x, y, 
+     main = "Normalized Whole Brain Volume vs Age", 
+     xlab = "nWBV", 
+     ylab = "Age", 
+     pch = 19, 
+     col = "purple", 
+     frame = FALSE)
+abline(lm(y ~ x, data = oasis_longitudinal), col = "blue", lwd = 2)
+
+```
+
+# The Role of Age in Predicting Cognitive Decline: An Analysis Using MMSE Scores
+
+By: Adasia McClinton
+
+## Data Cleaning and Ingestion
+
+```{r}
+data <- read_csv("/Users/anmcclinton/Downloads/oasis_longitudinal.csv")
+
+library(mice)
+imputed_data <- mice(data, m = 5, method = 'pmm')
+imputed_list <- lapply(1:5, function(i) complete(imputed_data, i))
+```
+
+## Model 0: Age as the Sole Predictor
+
+-   Assess whether **age** alone is a significant predictor of cognitive decline as measured by MMSE scores.
+
+$$
+\text{MMSE}_{ij} = 29.660 - 0.031 \times \text{Age}_{ij} + u_{0j} + \epsilon_{ij}
+$$
+
+-   **Intercept**: 29.660 (baseline MMSE score).
+-   **Age Coefficient**: -0.031 (small, non-significant decline with age).
+
+### Key Findings
+
+-   Age alone is not a significant predictor of MMSE scores.
+-   Indicates additional variables may explain cognitive decline.
+
+## Model 0: Age as the Sole Predictor
+
+### R Code
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+imputed_list <- lapply(imputed_list, function(d) {
+  names(d)[names(d) == "Subject ID"] <- "Subject_ID"
+  d
+})
+
+# Model 0: Age as the sole predictor
+library("lme4")
+library("mitml")
+library("Matrix")
+model0 <- lapply(imputed_list, function(data) lmer(MMSE ~ Age + (1 | Subject_ID), data = data))
+pooled_results <- testEstimates(model0, method = "D2")
+summary(pooled_results)
+
+```
+
+-   **Results**: The age effect on MMSE was small and non-significant, suggesting that age alone does not fully explain cognitive decline.
+
+## Model 1: Adding Dementia Severity and SES
+
+-   Examine the combined effect of age, dementia severity (CDR), and SES
+
+    $$\text{MMSE}_{ij} = 34.544 - 0.070 \times \text{Age}_{ij} - 4.699 \times \text{GD}_{ij} - 0.231 \times \text{SES}_{ij} + 0.008 \times (\text{Age} \times \text{GD})_{ij} + u_{0j} + \epsilon_{ij}$$
+
+<!-- -->
+
+-   **Age Coefficient**: -0.070 (non-significant decline).
+
+-   **CDR Coefficient**: -4.699 (significant decline in MMSE).
+
+-   **SES Coefficient**: -0.231 (small decline).
+
+### Key Findings
+
+-   Dementia severity significantly predicts MMSE scores.
+
+-   Age and SES are not significant predictors in this model.
+
+## Model 1: Adding Dementia Severity and SES
+
+### R Code
+
+```{r}
+model1 <- lapply(imputed_list, function(data) {
+  lmer(MMSE ~ Age * Group + SES + (1 | Subject_ID), data = data)
+})
+pooled_results <- testEstimates(model1, method = "D2")
+summary(pooled_results)
+```
+
+-   **Results**: This model showed no significant effects for age, SES, or age-by-group interactions, indicating that additional factors may better explain cognitive decline.
+
+## Final Model: Significant Predictors Only
+
+Focus on significant predictors: **CDR** and **nWBV**.
+
+$$
+\text{MMSE}_{ij} = 17.894 - 5.441 \times \text{CDR}_{ij} + 15.038 \times \text{nWBV}_{ij} + u_{0j} + \epsilon_{ij}
+$$
+
+-   **CDR Coefficient**: -5.441 (strong negative effect).
+
+-   **nWBV Coefficient**: 15.038 (positive effect).
+
+### Key Findings
+
+-   CDR strongly predicts cognitive decline.
+
+-   Higher nWBV mitigates decline.
+
+## Final Model: Significant Predictors Only
+
+### R Code
+
+```{r}
+final_model <- lapply(imputed_list, function(data) {
+  lmer(MMSE ~ CDR + nWBV + (1 | Subject_ID), data = data)
+})
+pooled_final_results <- testEstimates(final_model, method = "D2")
+summary(pooled_final_results)
+```
+
+-   **Results**: CDR was significantly associated with MMSE scores, showing that higher dementia severity leads to lower cognitive function. Additionally, higher nWBV was associated with higher MMSE, supporting its role in cognitive preservation.
+
+## Conclusions
+
+### Key Takeaways
+
+-   Age alone does not predict cognitive decline.
+
+-   Dementia severity (CDR) is a strong negative predictor.
+
+-   Higher brain volumes (nWBV) are protective against cognitive decline.
+
+# Brain Volume: The Role of Age and Socioeconomic Status
+
+By: Preethi R.
+
+## Fitting the Linear Mixed Model: {.smaller}
+
+-   Outcome: nWBV (Normalized Whole Brain Volume) – representing structural brain changes over time.
+
+-   Primary Predictor: Age to see if aging correlates with changes in brain volume.
+
+-   Secondary Predictor: Socioeconomic Status (SES) to observe if socioeconomic factors impact brain volume over time.
+
+-   Fixed Effects: Age and Socioeconomic Status (SES).
+
+-   Random Effects: Subject.ID.
+
+The linear mixed model used in this analysis is given by:
+
+$$
+\text{nWBV}{ij} = \beta_0 + \beta_1 \cdot \text{Age}{ij} + \beta_2 \cdot \text{SES}{ij} + \mu_{i} + \epsilon_{ij}
+$$
+
+Where:
+
+-   $nWBV_{ij}$ : Normalized whole brain volume for subject (i) at time (j).
+
+-   $\beta_0$ : Overall intercept (fixed effect).
+
+-   $\beta_1$ : Fixed effect of Age.
+
+-   $\beta_2$ : Fixed effect of SES.
+
+-   $\mu_{i}$ : Random intercept for each subject.
+
+-   $\epsilon_{ij}$ : Residual error term.
+
+## METHODOLOGY {.smaller}
+
+<br>
+
+The most common method used in fitting linear mixed models are:
+
+<br>
+
+**1. Maximum Likelihood Estimation (MLE)**:
+
+-   it determines the parameters under which the observed data is most probable.
+
+-   estimates both the fixed effects (population-level parameters) and variance components (random effects and residual variances) by maximizing the likelihood of the observed data.
+
+<br>
+
+**2. Restricted Maximum Likelihood Estimation (REML)** :
+
+-   maximizes the likelihood of the data after adjusting for the fixed effects, focusing on variance components estimation.
+
+-   less biased because it adjusts for the loss of degrees of freedom caused by estimating fixed effects.
+
+## Data Cleaning:
+
+<br>
+
+```{r, warning=FALSE, echo=T, message=FALSE}
+#install.packages("readr")
+library(readr)
+
+oasis_data <- read_csv("oasis_longitudinal.csv")
+
+# Remove duplicate rows
+oasis_data <- oasis_data[!duplicated(oasis_data), ]
+
+# Remove rows with missing values
+oasis_data <- na.omit(oasis_data)
+
+# View cleaned data
+head(oasis_data)
+```
+
+## #1. Age as the only predictor
+
+<br>
+
+```         
+```
+
+```{r, echo=FALSE}
+# Fix column names
+oasis_data$Subject_ID <- oasis_data[["Subject ID"]]
+oasis_data$gender <- oasis_data[["M/F"]]
+
+library(lme4)
+library(Matrix)
+
+model <- lmer(nWBV ~ Age + (1 | Subject_ID), data = oasis_data)
+summary(model)
+
+
+```
+
+## equation and interpretation of age as the only predictor {.smaller}
+
+<br>
+
+the linear mixed equation is: $$
+\text{nWBV}{ij} = 0.9978 - 0.0035 \cdot \text{Age}{ij} + \mu_{i} + \epsilon_{ij}
+$$
+
+where:
+
+• 0.9978 is the fixed intercept, representing the average baseline nWBV when Age is 0.
+
+• -0.0035 is the fixed effect estimate for Age, indicating that for each additional year of age, the nWBV decreases by approximately 0.0035 units on average.
+
+<br>
+
+**INTERPRETATION**:
+
+-   age has a significant negative effect on nWBV
+
+-   t-value for Age = -15.78
+
+-   this shows a strong association between age and decreasing nWBV.
+
+## 2.Age and Socio-Economic status as predictors
+
+<br>
+
+-   lmer function uses REML unless specified otherwise.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Rename only in oasis_data so lmer finds Subject_ID
+if ("Subject ID" %in% names(oasis_data)) {
+  names(oasis_data)[names(oasis_data) == "Subject ID"] <- "Subject_ID"
+}
+
+# Fit Linear Mixed Model with Age and Socio Economic status as the predictors
+library(lme4)
+model <- lmer(nWBV ~ Age + SES + (1 | Subject_ID), data = oasis_data)
+summary(model)
+```
+
+## equation and interpreation of age and ses: {.smaller}
+
+<br>
+
+The model equation: $$
+\text{nWBV}{ij} = 0.9956 - 0.0035 \cdot \text{Age}{ij} + 0.0009 \cdot \text{SES}{ij} + \mu_{i} + \epsilon_{ij}
+$$ where:
+
+• 0.9956 is the intercept, representing the estimated nWBV when both Age and SES are 0.
+
+• -0.0035 is the coefficient for Age, indicating that each additional year of age is associated with an average decrease in nWBV by approximately 0.0035 units.
+
+• 0.0009 is the coefficient for SES, suggesting that for each unit increase in SES, there is a slight positive association with nWBV, though it is not statistically significant (t-value = 0.366).
+
+<br>
+
+**INTERPRETATION**
+
+-   Age
+
+    -   strong, statistically significant negative effect on nWBV
+
+    -   consistent with prior findings (t-value of -15.761)
+
+-   SES
+
+    -   small positive effect on nWBV as t-value = 0.366
+
+    -   SES may not contribute meaningfully to explaination of variation in nWBV in this model.
+
+## Maximum Likelihood (predictors: age and ses)
+
+<br>
+
+R script for MLE :
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Rename only in oasis_data so lmer finds Subject_ID
+if ("Subject ID" %in% names(oasis_data)) {
+  names(oasis_data)[names(oasis_data) == "Subject ID"] <- "Subject_ID"
+}
+# Fit the model with ML for model comparison
+model_ml <- lmer(nWBV ~ Age + SES + (1 | Subject_ID), data = oasis_data, REML = FALSE)
+summary(model_ml)
+```
+
+## Interpretation for Maximum Likelihood: {.smaller}
+
+-   Random Effects:
+
+    -   (Intercept) Variance: 0.0009979 (SD: 0.0316) This is the variability in nWBV across different subjects.
+
+    -   Residual Variance: 0.00006953 (SD: 0.00834) This is the remaining variance in nWBV after accounting for both fixed and random effects.
+
+<br>
+
+-   Fixed Effects:
+
+    -   *Intercept*: 0.9952. likely represents an estimated baseline close to 1.
+
+    -   *Age*: -0.00348. nWBV decreases with increasing age.
+
+        -   for each one-unit increase in Age, nWBV is expected to decrease by about 0.00348 units, holding SES constant.
+
+    -   *t value*: -15.804 (a high magnitude t-value) - Age is statistically significant
+
+    -   *SES*: 0.00088. This positive coefficient suggests that as SES increases, there’s a very slight increase in nWBV.
+
+        -   low t-value (0.369), SES may not have a statistically significant effect on nWBV in this model.
+
+<br>
+
+**INTERPRETATION**
+
+*Age* is a *significant predictor* of nWBV,
+
+-   with a negative effect indicating cognitive decline as age increases.
+
+*SES* appears to have little to *no significant* effect on nWBV based on this model.
+
+## Comparison of the two methods:
+
+<br>
+
+• *Fixed Effects*: The estimates for Age and SES under REML are nearly identical to those under ML, showing consistent results.
+
+• **Age** has a significant negative impact on nWBV, indicating **cognitive decline with age**.
+
+• **SES** appears to have little to **no significant effect on nWBV**.
+
+<br> <br>
+
+In summary,
+
+-   REML is appropriate for final model interpretation as it provides the better estimates for variance components,
+
+-   while both methods confirm Age as a key predictor of nWBV decline.
+
+# Modeling CDR: Dementia and Education
+
+By: Bess T.
+
+## Fitting the Linear Mixed Model: {.smaller}
+
+-   Outcome: CDR (Clinical Dementia Rating) – Examining dementia severity over time.
+
+-   Primary Predictor: Dementia Status (Demented vs. Nondemented) to explore how dementia impacts CDR progression.
+
+-   Secondary Predictor: Education Level (EDUC) to assess if education affects dementia severity.
+
+-   Fixed Effects: Dementia Status and Education Level (EDUC).
+
+-   Random Effects: Subject.ID.
+
+The linear mixed model used in this analysis is given by:
+
+$$
+\text{CDR}{ij} = \beta_0 + \beta_1 \cdot \text{DementiaStatus}{ij} + \beta_2 \cdot \text{EDUC}{ij} + \mu_{i} + \epsilon_{ij}
+$$
+
+Where:
+
+-   $CDR_{ij}$ : Clinical Dementia Rating for subject (i) at time (j).
+
+-   $\beta_0$ : Overall intercept (fixed effect).
+
+-   $\beta_1$ : Fixed effect of Dementia Status.
+
+-   $\beta_2$ : Fixed effect of Education Level.
+
+-   $\mu_{i}$ : Random intercept for each subject.
+
+-   $\epsilon_{ij}$ : Residual error term.
+
+## Data Cleaning:
+
+<br>
+
+```{r, warning=FALSE, echo=T, message=FALSE}
+#install.packages("readr")
+library(readr)
+
+oasis_data <- read_csv("oasis_longitudinal.csv")
+
+# Remove duplicate rows
+oasis_data <- oasis_data[!duplicated(oasis_data), ]
+
+# Remove rows with missing values
+oasis_data <- na.omit(oasis_data)
+
+# View cleaned data
+head(oasis_data)
+```
+
+## 1. Dementia Status as the only predictor
+
+<br>
+
+```{r, warning=FALSE, echo=T, message=FALSE}
+#install.packages("lme4")
+
+library(lme4)
+oasis_data$Group <- factor(oasis_data$Group)
+oasis_data$Subject_ID <- oasis_data$'Subject ID'
+
+# Fit the linear mixed model with only Dementia Status as the predictor, reml
+model <- lmer(CDR ~ Group + (1 | Subject_ID), data = oasis_data)
+summary(model)
+```
+
+## equation and interpretation of Dementia Status as the only predictor {.smaller}
+
+<br>
+
+the linear mixed equation is: $$
+\text{CDR}{ij} = 0.2506 + 0.4225 \cdot \text{Demented}{ij} - 0.2461 \cdot \text{Nondemented}{ij} + \mu_{i} + \epsilon_{ij}
+$$
+
+where:
+
+• If the group is "Demented", the coefficient for Group Demented is used.
+
+• If the group is "Nondemented", the coefficient for Group Nondemented is used.
+
+• If the group is the baseline (which is typically "Other" or the group not specifically named in the output), then no extra term is added for Group.
+
+<br>
+
+**INTERPRETATION**:
+
+• The coefficient for Group Demented (0.4225) indicates that, on average, individuals in the "Demented" group have a higher CDR score by 0.4225 compared to the baseline group.
+
+• The coefficient for Group Nondemented (-0.2461) indicates that, on average, individuals in the "Nondemented" group have a lower CDR score by 0.2461 compared to the baseline group.
+
+• t-value for Demented = 8.597
+
+• t-value for Nondemented = -5.150
+
+• This shows a strong association between Dementia Status and CDR.
+
+## 2.Age and Socio-Economic status as predictors
+
+<br>
+
+-   lmer function uses REML unless specified otherwise.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Rename only in oasis_data so lmer finds Subject_ID
+if ("Subject ID" %in% names(oasis_data)) {
+  names(oasis_data)[names(oasis_data) == "Subject ID"] <- "Subject_ID"
+}
+
+# Fit Linear Mixed Model with Age and Socio Economic status as the predictors
+model <- lmer(CDR ~ Group + EDUC + (1 | Subject_ID), data = oasis_data)
+summary(model)
+```
+
+## equation and interpreation of Dementia Status and Education Level: {.smaller}
+
+<br>
+
+The model equation: $$
+\text{CDR}{ij} = 0.1499 + 0.4318 \cdot \text{Demented}{ij} - 0.2455 \cdot \text{Nondemented}{ij} + - 0.0066 \cdot \text{EDUC}{ij} + \mu_{i} + \epsilon_{ij}
+$$ <br>
+
+**INTERPRETATION**
+
+• The coefficient for Group Demented (0.4318) indicates that, on average, individuals in the "Demented" group have a higher CDR score by 0.4318 compared to the baseline group.
+
+• The coefficient for Group Nondemented (-0.2455) indicates that, on average, individuals in the "Nondemented" group have a lower CDR score by 0.2455 compared to the baseline group.
+
+• The coefficient for Education Level (0.0066), for each additional year of education, a subject's CDR score increases by 0.00661 units on average.
+
+• t-value for Demented = 8.725
+
+• t-value for Nondemented = -5.153
+
+• t-value for EDUC = 1.345
+
+## Conclusion
+
+<br>
+
+• Dementia Status (Group) is strongly associated with CDR.
+
+• Education (EDUC) has a small, positive association with CDR, but this effect is not statistically significant (the t-value of 1.345 is below the typical threshold for significance).
+
+## References
+
+-   Agostinelli, C., & Yohai, V. J. (2016). Composite robust estimators for linear mixed models. *Journal of the American Statistical Association*, 111(516), 1764-1774. <https://doi.org/10.1080/01621459.2015.1115358>
+
+-   Bates, D. (2014). Fitting linear mixed-effects models using lme4. arXiv preprint arXiv:1406.5823.
+
+-   Baayen, R. H., Davidson, D. J., & Bates, D. M. (2008). Mixed-effects modeling with crossed random effects for subjects and items. *Journal of Memory and Language*, 59(4), 390-412.
+
+-   Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013). Random effects structure for confirmatory hypothesis testing: Keep it maximal. *Journal of Memory and Language*, 68(3), 255-278.
+
+-   Bruin, J. (2006). newtest: command to compute new test. UCLA: Statistical Consulting Group. <https://stats.oarc.ucla.edu/stata/ado/analysis/>.
+
+## References (continued)
+
+-   Enders, C. K. (2010). *Applied Missing Data Analysis*. Guilford Press.
+
+-   Gelman, A., & Hill, J. (2007). *Data Analysis Using Regression and Multilevel/Hierarchical Models*. Cambridge University Press.
+
+-   Starkweather, J. (2010). Linear mixed effects modeling using R. Unpublished Manuscript.
+
+## 

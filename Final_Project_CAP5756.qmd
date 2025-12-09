@@ -1,0 +1,229 @@
+---
+title: "Final Project"
+subtitle: "Tools for Data Science"
+author: "Adasia McClinton"
+format: html
+self-contained: true
+execute: 
+  message: false
+  warning: false
+---
+
+In this project you will be working with R, SQL, and Python in the same document. We will use the data sets *`airlines`* and *`flights`* from the package *`nycflights13`*.
+
+1.  *Render* the empty file (to make sure everything is working)
+2.  Consistently *Render* the file each time you answer a question
+
+**In R, install the packages `nycflights13`, `sqldf`, `tidyverse` and load all of them and data sets `flights` and `airlines`**. Take your time to understand the data sets.
+
+```{r, warning=FALSE, message=FALSE}
+# Install code here - comment the code when you finish installation
+#install.packages(c("nycflights13","sqldf"))  
+#install.packages("reticulate")
+# Load all package
+library(tidyverse)
+library(nycflights13)
+library(sqldf)
+library(reticulate)
+library(dplyr)
+#py_install("pandas") 
+#py_install("nycflights13")
+#py_install("seaborn")
+("matplotlib")
+
+# Load the data 
+data(flights)
+data(airlines)
+
+
+```
+
+> ## **Question 1: List the name of airlines where the destination is MIA airport with their *average arrival delays* and sort them from the smallest to largest average arrival delays. Use data frames `flights` and `airlines`.**
+
+We shall solve this question using R, SQL, and Python.
+
+### R solution
+
+You can use the R command `inner_join()` to join two tables.
+
+```{r, warning=FALSE, message=FALSE}
+# Joining flights and airlines data frames
+joined_data <- inner_join(flights, airlines, by = "carrier")
+
+# Filtering flights with destination MIA
+mia_flights <- filter(joined_data, dest == "MIA")
+
+# Calculating average arrival delay for each airline
+average_delay <- mia_flights %>%
+  group_by(name) %>%
+  summarise(average_delay = mean(arr_delay, na.rm = TRUE)) %>%
+  arrange(average_delay)
+
+# Displaying the result
+average_delay
+
+
+```
+
+### SQL solution
+
+Write your SQL query in the function `sqldf()`. For example,`sqldf("select * from relig_income")` list all rows in the data frame `relig_income`.
+
+```{r, warning=FALSE, message=FALSE }
+# Example
+# sqldf("select * from relig_income limit 3")
+sql_query <- "
+  SELECT airlines.name, AVG(flights.arr_delay) AS average_delay
+  FROM flights
+  INNER JOIN airlines ON flights.carrier = airlines.carrier
+  WHERE flights.dest = 'MIA'
+  GROUP BY airlines.name
+  ORDER BY average_delay
+"
+
+# Executing SQL query
+sqldf(sql_query)
+
+```
+
+### Python solution
+
+Use [pd.join()](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.join.html) from pandas. You can either import data from the R package into Python or use the data Python package [nycflights13](https://pypi.org/project/nycflights13/)
+
+```{python}
+# load python libraries 
+
+import pandas as pd
+
+# Load data
+from nycflights13 import airlines, flights
+
+# Joining flights and airlines data frames
+joined_data = flights.merge(airlines, left_on='carrier', right_on='carrier')
+
+# Filtering flights with destination MIA
+mia_flights = joined_data[joined_data['dest'] == 'MIA']
+
+# Calculating average arrival delay for each airline
+average_delay = mia_flights.groupby('name')['arr_delay'].mean().reset_index()
+
+# Sorting by average delay
+average_delay = average_delay.sort_values(by='arr_delay')
+
+# Displaying the result
+print(average_delay)
+
+```
+
+> ## **Question 2: Plot the boxplot of the departure delays vs the name of airlines where the destination is MIA airport. Solve this question using R and Python.**
+
+### R solution
+
+Use ggplot
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+
+# Filtering flights with destination MIA
+mia_flights <- filter(flights, dest == "MIA")
+
+# Joining with airlines to get airline names
+mia_flights <- inner_join(mia_flights, airlines, by = "carrier")
+
+# Plotting boxplot
+ggplot(mia_flights, aes(x = name, y = dep_delay)) +
+  geom_boxplot() +
+  labs(x = "Airline", y = "Departure Delay", title = "Departure Delays vs Airline to MIA") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+### Python solution
+
+You can use [pandas.boxplot()](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.boxplot.html) or [seaborn.boxplot()](https://seaborn.pydata.org/generated/seaborn.boxplot.html). You can either import data from the R package into Python or use the data Python package [nycflights13](https://pypi.org/project/nycflights13/)
+
+```{python}
+# import python libraries
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load data using nycflights13 package
+from nycflights13 import flights, airlines
+
+# Joining flights and airlines data frames
+joined_data = flights.merge(airlines, left_on='carrier', right_on='carrier')
+
+# Filtering flights with destination MIA
+mia_flights = joined_data[joined_data['dest'] == 'MIA']
+
+# Boxplot
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='name', y='dep_delay', data=mia_flights)
+plt.xlabel('Airline')
+plt.ylabel('Departure Delay')
+plt.title('Distribution of Departure Delays by Airline for MIA Destination')
+plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+plt.tight_layout()  # Adjust layout to prevent clipping of labels
+plt.show()
+```
+
+> ## **Question 3: For each airlines, 1) find the month where the average departure delay time is the highest in the year. 2) Make a visualization to show the results. Solve this question using your preferred language R or Python.**
+
+```{r}
+# Load necessary R libraries
+library(dplyr)
+library(ggplot2)
+
+# Load data using nycflights13 package
+flights <- nycflights13::flights
+airlines <- nycflights13::airlines
+
+# 1) Find the month with the highest average departure delay for each airline
+highest_delay_month <- flights %>%
+  group_by(carrier, month) %>%
+  summarize(dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  arrange(carrier, desc(dep_delay)) %>%
+  slice(1)
+
+# 2) Visualization
+ggplot(highest_delay_month, aes(x = factor(month), y = dep_delay, fill = carrier)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Month", y = "Average Departure Delay", 
+       title = "Month with Highest Average Departure Delay for Each Airline",
+       fill = "Airline") +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  guides(fill = guide_legend(title.position = "top", ncol = 1)) +
+  scale_x_discrete(labels = month.abb) +
+  coord_flip()
+
+```
+
+
+```{python}
+# import python libraries
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load data using nycflights13 package
+from nycflights13 import flights, airlines
+
+# 1) Find the month with the highest average departure delay for each airline
+highest_delay_month = flights.groupby(['carrier', 'month'])['dep_delay'].mean().reset_index()
+highest_delay_month = highest_delay_month.sort_values(by=['carrier', 'dep_delay'], ascending=[True, False])
+highest_delay_month = highest_delay_month.drop_duplicates(subset='carrier', keep='first')
+
+# 2) Visualization
+plt.figure(figsize=(12, 6))
+sns.barplot(x='month', y='dep_delay', hue='carrier', data=highest_delay_month)
+plt.xlabel('Month')
+plt.ylabel('Average Departure Delay')
+plt.title('Month with Highest Average Departure Delay for Each Airline')
+plt.legend(title='Airline', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+```
